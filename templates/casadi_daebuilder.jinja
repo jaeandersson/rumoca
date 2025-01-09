@@ -9,11 +9,11 @@ class {{ class.name }}(BaseModel):
 
         # Constants
         {{ render_variables(class.c, "c") | indent(4) }}
-        {{ render_start(class.c) | indent(4) }}
+        {{ render_bindings(class.c) | indent(4) }}
 
         # Parameters
         {{ render_variables(class.p, "p") | indent(4) }}
-        {{ render_start(class.p) | indent(4) }}
+        {{ render_bindings(class.p) | indent(4) }}
 
         # Discrete states
         {{ render_variables(class.z, "x") | indent(4) }}
@@ -51,7 +51,7 @@ class __{{ class.name }}(BaseModel):
 
         # Constants
         {{ render_variables(class.c, "c") | indent(4) }}
-        {{ render_start(class.c) | indent(4) }}
+        {{ render_bindings(class.c) | indent(4) }}
 
         # Inputs
         {{ render_variables(class.u, "u") | indent(4) }}
@@ -88,6 +88,12 @@ class __{{ class.name }}(BaseModel):
         {%- if var.array_subscripts | length > 0 %}, dimension=[{% for sub in var.array_subscripts -%}
             {{ render_expression(expr=sub) -}}{% if not loop.last %}, {% endif %}
         {%- endfor -%}]{%- endif -%})
+    {% endfor -%}
+{%- endmacro -%}
+
+{%- macro render_bindings(var_list) -%}
+    {% for var in var_list -%}
+    dae.assign('{{ var.name }}', {{ render_expression(expr=var.start) | indent(4) }})
     {% endfor -%}
 {%- endmacro -%}
 
