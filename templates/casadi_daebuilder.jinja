@@ -7,43 +7,37 @@ class {{ class.name }}(BaseModel):
     def __init__(self):
         super().__init__('{{ class.name }}')
 
-        # declare constants
-        {%- for const in class.c %}
-        {{ const.name }} = {{ render_expression(expr=const.start) }}
-        {%- endfor %}
+        # Constants
+        {{ render_variables(class.c, "c") | indent(4) }}
+        {{ render_start(class.c) | indent(4) }}
 
-        # declare parameters
+        # Parameters
         {{ render_variables(class.p, "p") | indent(4) }}
-
-        # declare parameter start values
         {{ render_start(class.p) | indent(4) }}
 
-        # declare discrete states
+        # Discrete states
         {{ render_variables(class.z, "x") | indent(4) }}
-
-        # declare discrete states start values
         {{ render_start(class.z) | indent(4) }}
 
-        # declare inputs
+        # Inputs
         {{ render_variables(class.u, "u") | indent(4) }}
 
-        # declare outputs
+        # Outputs
         {{ render_variables(class.y, "y") | indent(4) }}
 
-        # declare internal variables
+        # Internal variables
         {{ render_variables(class.w, "w") | indent(4) }}
 
-        # declare continuous states
+        # Continuous states
         {{ render_variables(class.x, "x") | indent(4) }}
-
-        # declare continuous states start values
         {{ render_start(class.x) | indent(4) }}
 
-        # alg
+        # Algorithm
         {{ render_statement_list(class.alg) | indent(4) }}
 
         # ode
         {{ render_ode(class.ode) | indent(4) }}
+
 {%- endmacro %}
 
 {%- macro render_class_function(class) %}
@@ -55,26 +49,21 @@ class __{{ class.name }}(BaseModel):
     def __init__(self):
         super().__init__('{{ class.name }}')
 
-        # declare constants
-        {%- for const in class.c %}
-        {{ const.name }} = {{ render_expression(expr=const.start) }}
-        {%- endfor %}
+        # Constants
+        {{ render_variables(class.c, "c") | indent(4) }}
+        {{ render_start(class.c) | indent(4) }}
 
-        # declare inputs
+        # Inputs
         {{ render_variables(class.u, "u") | indent(4) }}
 
-        # declare internal variables
+        # Internal variables
         {{ render_variables(class.w, "w") | indent(4) }}
 
-        # declare outputs
+        # Outputs
         {{ render_variables(class.y, "y") | indent(4) }}
 
-        # alg
+        # Algorithm
         {{ render_statement_list(class.alg) | indent(4) }}
-
-        # build function
-        {{ render_vector("self.y", class.y) | indent(4) }}
-        self.F = ca.Function("{{ class.name }}", [self.u], [self.y], ['u'], ['y'])
 
     def __call__(self, *args):
         return self.F(ca.vertcat(*args))
@@ -95,24 +84,17 @@ class __{{ class.name }}(BaseModel):
 
 {%- macro render_variables(var_list, ca_type) -%}
     {% for var in var_list -%}
-    {{ var.name }} = self.dae.add_{{ca_type}}('{{ var.name }}'
-        {%- if var.array_subscripts | length > 0 %}, {% for sub in var.array_subscripts -%}
-            {{ render_expression(expr=sub) -}}{% if not loop.last %},{% endif %}
-        {%- endfor -%}{%- endif -%})
+    self.dae.add('{{ var.name }}', '{{ca_type}}'
+        {%- if var.array_subscripts | length > 0 %}, dimension=[{% for sub in var.array_subscripts -%}
+            {{ render_expression(expr=sub) -}}{% if not loop.last %}, {% endif %}
+        {%- endfor -%}]{%- endif -%})
     {% endfor -%}
 {%- endmacro -%}
 
-{%- macro render_vector(target, var_list) -%}
-    {{ target }} = ca.vertcat(
-    {%- for var in var_list %}
-        {{ var.name }}{% if not loop.last %},{% endif %}
-    {%- endfor %})
-{%- endmacro -%}
-
 {%- macro render_start(var_list) -%}
-    {%- for var in var_list %}
-    dae.set_start('{{ var.name }}', {{ render_expression(expr=var.start) | indent(4) -}})        
-    {%- endfor %}
+    {% for var in var_list -%}
+    dae.set_start('{{ var.name }}', {{ render_expression(expr=var.start) | indent(4) }})
+    {% endfor -%}
 {%- endmacro -%}
 
 {%- macro render_ode(expr_list) -%}
@@ -129,12 +111,11 @@ class __{{ class.name }}(BaseModel):
     {{ op }}{{ render_expression(expr=expr.rhs) -}}
 {%- endmacro -%}
 
-{%- macro render_component_reference(comp) -%}
-    {{ comp.name }}
-    {%- if comp.array_subscripts | length > 0 %}[{% for sub in comp.array_subscripts -%}
+{%- macro render_component_subscripts(comp) -%}
+    [{% for sub in comp.array_subscripts -%}
         {#- handles index from 1 to 0 from Modelica to python-#}
-        {{ render_expression(expr=sub) | int - 1 }}{% if not loop.last %},{% endif %}
-    {%- endfor -%}]{%- endif -%}
+        {{ render_expression(expr=sub) | int - 1 }}{% if not loop.last %}, {% endif %}
+    {%- endfor -%}]
 {%- endmacro -%}
 
 {%- macro render_expression(expr) -%}
@@ -144,17 +125,20 @@ class __{{ class.name }}(BaseModel):
         {%- elif key == "UnsignedInteger" -%}
             {{ value }}
         {%- elif key == "Ref" -%}
-            {{ render_component_reference(comp=value.comp) }}
+            self.dae['{{ value.comp.name -}}'
+            {%- if value.comp.array_subscripts | length > 0 -%}
+            ,{{ render_component_subscripts(comp=value.comp) }}
+            {%- endif -%}]
         {%- elif key == "Add" -%}
             {{ render_binary(op=" + ", expr=value) -}}
         {%- elif key == "Sub" -%}
             {{ render_binary(op=" - ", expr=value) -}}
         {%- elif key == "Mul" -%}
-            {{ render_binary(op="*", expr=value) -}}
+            {{ render_binary(op=" * ", expr=value) -}}
         {%- elif key == "Div" -%}
-            {{ render_binary(op="/", expr=value) -}}
+            {{ render_binary(op=" / ", expr=value) -}}
         {%- elif key == "Exp" -%}
-            {{- render_binary(op="^", expr=value) -}}
+            {{- render_binary(op=" ^ ", expr=value) -}}
         {%- elif key == "Negative" -%}
             {{ render_unary(op="-", expr=value) -}}
         {%- elif key == "Parenthesis" -%}
@@ -197,7 +181,11 @@ class __{{ class.name }}(BaseModel):
 {%- macro render_statement(stmt) -%}
     {%- for key, value in stmt | items -%}
         {%- if key == "Assignment" -%}
-            {{ render_component_reference(comp=value.comp) }} = {{ render_expression(expr=value.rhs) }}
+            self.dae.assign('{{ value.comp.name -}}'
+            {%- if value.comp.array_subscripts | length > 0 -%}
+            , {{ render_component_subscripts(comp=value.comp) }}
+            {%- endif -%}
+            , {{ render_expression(expr=value.rhs) }})
         {%- else -%}
             {{ panic("unknown statement: " + key) }}
         {%- endif %}
@@ -214,38 +202,8 @@ class BaseModel:
         self.dae = ca.DaeBuilder(name)
 
     def __repr__(self):
-        return repr(self.__dict__)
+        return repr(self.dae)
 
-    def simulate(self, t=None, u=None):
-        if t is None:
-            t = np.arange(0, 1, 0.01)
-        if u is None:
-            u = 0
-
-        p0 = np.array([self.p0[k] for k in self.p0.keys()])
-        z0 = np.array([self.z0[k] for k in self.z0.keys()])
-        x0 = np.array([self.x0[k] for k in self.x0.keys()])
-
-        F = ca.integrator(
-            'F', 'idas',
-            {'x': self.x, 'z': self.z, 'p': self.p, 'u': self.u, 'ode': self.ode, 'alg': self.alg},
-            t[0], t)
-
-        res = F(x0=x0, z0=z0, p=p0, u=u)
-        return {
-            't': t,
-            'x': res['xf'].T
-        }
-    
-    def linearize(self):
-        A = ca.jacobian(self.ode, self.x)
-        B = ca.jacobian(self.ode, self.u)
-        C = ca.jacobian(self.y, self.x)
-        D = ca.jacobian(self.y, self.u)
-        return (A, B, C, D)
-
-def cat(axis, *args):
-    return ca.vertcat(*args)
 {%- for class in classes %}
 {{ render_class(class=class) }}
 {%- endfor %}
