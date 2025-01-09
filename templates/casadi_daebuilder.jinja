@@ -9,14 +9,20 @@ class {{ class.name }}(BaseModel):
 
         # Constants
         {{ render_variables(class.c, "c") | indent(4) }}
+
+        # Binding expressions for constants
         {{ render_bindings(class.c) | indent(4) }}
 
         # Parameters
         {{ render_variables(class.p, "p") | indent(4) }}
+
+        # Binding expressions for parameters
         {{ render_bindings(class.p) | indent(4) }}
 
         # Discrete states
         {{ render_variables(class.z, "x") | indent(4) }}
+
+        # Start attributes for discrete states
         {{ render_start(class.z) | indent(4) }}
 
         # Inputs
@@ -30,12 +36,14 @@ class {{ class.name }}(BaseModel):
 
         # Continuous states
         {{ render_variables(class.x, "x") | indent(4) }}
+
+        # Start attributes for continuous states
         {{ render_start(class.x) | indent(4) }}
 
         # Algorithm
         {{ render_statement_list(class.alg) | indent(4) }}
 
-        # ode
+        # Ordinary differential equations
         {{ render_ode(class.ode) | indent(4) }}
 
 {%- endmacro %}
@@ -51,6 +59,8 @@ class __{{ class.name }}(BaseModel):
 
         # Constants
         {{ render_variables(class.c, "c") | indent(4) }}
+
+        # Binding expressions for constants
         {{ render_bindings(class.c) | indent(4) }}
 
         # Inputs
@@ -66,7 +76,7 @@ class __{{ class.name }}(BaseModel):
         {{ render_statement_list(class.alg) | indent(4) }}
 
     def __call__(self, *args):
-        return self.F(ca.vertcat(*args))
+        raise RuntimeError('Not implemented')
 
 
 {{ class.name }} = __{{ class .name }}()
@@ -104,9 +114,9 @@ class __{{ class.name }}(BaseModel):
 {%- endmacro -%}
 
 {%- macro render_ode(expr_list) -%}
-    {%- for expr in expr_list %}
-    {{ render_expression(expr=expr) | indent(4) }}
-    {%- endfor %}
+    {% for expr in expr_list -%}
+    self.dae.assign_der('<state_name>', {{ render_expression(expr=expr) | indent(4) }})
+    {% endfor -%}
 {%- endmacro -%}
 
 {%- macro render_binary(op, expr) -%}
