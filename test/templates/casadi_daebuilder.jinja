@@ -40,14 +40,14 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         # Differential states start values
         {{ render_start(class, class.x) | indent(4) }}
 
-        # algorithmic
+        # Algorithmic statements
         {{ render_statement_list(class.algorithm) | indent(4) }}
 
-        # algebraic
+        # Algebraic equations
         {{ render_statement_list(class.algebric) | indent(4) }}
 
-        # ode
-        {{ render_ordermap_expression("self.ode", class.ode, class.x) | indent(8) }}
+        # Differential equations
+        {{ render_ode(class.ode, class.x) | indent(4) }}
 
 {% if class.class_type == "Function" %}
         # build function
@@ -93,7 +93,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 {%- macro render_bindings(class, var_list) -%}
     {%- for var in var_list -%}
     {%- set comp = class.components[var] -%}
-    self.dae.assign('{{ var }}', {{ render_ndarray(comp.start_value) | indent(4) }})
+    self.dae.bind('{{ var }}', {{ render_ndarray(comp.start_value) | indent(4) }})
     {% endfor -%}
 {%- endmacro -%}
 
@@ -104,12 +104,11 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {% endfor -%}
 {%- endmacro -%}
 
-{%- macro render_ordermap_expression(target, map, var_list) -%}
-    {{ target }} = ca.vertcat(
-    {% for var in var_list -%}
-        {%- set expr = map[var] -%}
-        {{ render_expression(expr=expr) }}{% if not loop.last %},{% endif %}
-    {% endfor -%})
+{%- macro render_ode(map, var_list) -%}
+    {%- for var in var_list -%}
+    {%- set expr = map[var] -%}
+    self.dae.bind(self.dae.der('{{ var }}'), {{ render_expression(expr=expr) }})
+    {% endfor -%}
 {%- endmacro -%}
 
 {%- macro render_binary(op, expr) -%}
