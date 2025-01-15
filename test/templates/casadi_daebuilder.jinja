@@ -5,30 +5,30 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     """
 
     def __init__(self):
-        super().__init__()
+        super().__init__('{{ class.name }}')
 
-        # declare constants
+        # Constants
         {%- for const in class.c %}
             {%- set comp = class.components[const] %}
         {{ comp.name }} = {{ comp.start_value.data[0] }}
         {%- endfor %}
 
-        # declare parameters
-        {{ render_symbols(class, class.p) | indent(4) }}
+        # Parameters
+        {{ render_variables(class, class.p, "p") | indent(4) }}
         {{ render_vector("self.p", class, class.p) | indent(12) }}
 
         # declare parameter start values
         {{ render_vector_start_dict("self.p0", class, class.p) | indent(4) }}
 
-        # declare discrete states
-        {{ render_symbols(class, class.z) | indent(4) }}
+        # Discrete states
+        {{ render_variables(class, class.z, "x") | indent(4) }}
         {{ render_vector("self.z", class, class.z) | indent(12) }}
 
         # declare discrete states start values
         {{ render_vector_start_dict("self.z0", class, class.z) | indent(4) }}
 
         # declare inputs
-        {{ render_symbols(class, class.u) | indent(4) }}
+        {{ render_variables(class, class.u, "u") | indent(4) }}
         {{ render_vector("self.u", class, class.u) | indent(12) }}
 
         # declare outputs
@@ -36,10 +36,10 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {{ render_vector("self.y", class, class.y) | indent(12) }}
 
         # declare internal variables
-        {{ render_symbols(class, class.w) | indent(4) }}
+        {{ render_variables(class, class.w, "w") | indent(4) }}
 
         # declare continuous states
-        {{ render_symbols(class, class.x) | indent(4) }}
+        {{ render_variables(class, class.x, "x") | indent(4) }}
         {{ render_vector("self.x", class, class.x) | indent(12) }}
 
         # declare continuous states start values
@@ -83,15 +83,15 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {%- endif -%}
 {%- endmacro -%}
 
-{%- macro render_symbols(class, var_list) -%}
+{%- macro render_variables(class, var_list, ca_type) -%}
     {%- for var in var_list -%}
-    {{ var }} = ca.SX.sym('{{ var }}'
+    self.dae.add('{{ var }}', dict(type = '{{ca_type}}'
         {%- set comp = class.components[var] -%}
-        {%- if comp.array_subscripts | length > 0 -%}{{ ", " }}
+        {%- if comp.array_subscripts | length > 0 -%}{{ ", dimension = [" }}
             {%- for sub in comp.array_subscripts -%}
                 {{ render_subscript(sub) -}}{% if not loop.last %},{% endif -%}
             {%- endfor -%}
-        {%- endif -%})
+        {{ "]" }}{%- endif -%}))
     {% endfor -%}
 {%- endmacro -%}
 
@@ -247,44 +247,12 @@ import numpy as np
 
 class BaseModel:
 
-    def __init__(self):
-        pass
+    def __init__(self, name):
+        # Underlying DaeBuilder instance
+        self.dae = ca.DaeBuilder(name)
 
     def __repr__(self):
-        return repr(self.__dict__)
-
-    def simulate(self, t=None, u=None):
-        if t is None:
-            t = np.arange(0, 1, 0.01)
-        if u is None:
-            u = 0
-
-        p0 = np.array([self.p0[k] for k in self.p0.keys()])
-        z0 = np.array([self.z0[k] for k in self.z0.keys()])
-        x0 = np.array([self.x0[k] for k in self.x0.keys()])
-
-        F = ca.integrator(
-            'F', 'idas',
-            {'x': self.x, 'z': self.z, 'p': self.p, 'u': self.u, 'ode': self.ode, 'alg': self.alg},
-            t[0], t)
-
-        res = F(x0=x0, z0=z0, p=p0, u=u)
-        return {
-            't': t,
-            'x': res['xf'].T
-        }
-    
-    def linearize(self):
-        A = ca.jacobian(self.ode, self.x)
-        B = ca.jacobian(self.ode, self.u)
-        C = ca.jacobian(self.y, self.x)
-        D = ca.jacobian(self.y, self.u)
-        return (A, B, C, D)
-
-
-def cat(axis, *args):
-    return ca.vertcat(*args)
-
+        return repr(self.dae)
 
 {%- for key, val in def.classes | items %}
 
