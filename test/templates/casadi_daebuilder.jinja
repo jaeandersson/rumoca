@@ -129,11 +129,11 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 {%- macro render_component_reference(comp) -%}
     {%- if comp.local %}.{% endif -%}
     {%- for part in comp.parts -%}
-        {{ part.name }}
-        {%- if part.array_subscripts | length > 0 %}[
+        '{{ part.name }}'
+        {%- if part.array_subscripts | length > 0 %}, [
             {%- for sub in part.array_subscripts -%}
                 {#- handles index from 1 to 0 from Modelica to python-#}
-                {{ render_subscript(sub) | int -1 }}{% if not loop.last -%},{% endif %}
+                {{ render_subscript(sub) | int -1 }}{% if not loop.last -%}, {% endif %}
             {%- endfor -%}]
         {%- endif -%}
     {%- endfor -%}
@@ -146,7 +146,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {%- elif key == "UnsignedInteger" -%}
             {{ value }}
         {%- elif key == "Ref" -%}
-            self.dae('{{ render_component_reference(comp=value.comp) }}')
+            self.dae({{ render_component_reference(comp=value.comp) }})
         {%- elif key == "Add" -%}
             {{ render_binary(op=" + ", expr=value) -}}
         {%- elif key == "Sub" -%}
@@ -199,7 +199,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 {%- macro render_statement(stmt) -%}
     {%- for key, value in stmt | items -%}
         {%- if key == "Assignment" -%}
-        self.dae.bind('{{ render_component_reference(comp=value.comp) }}', {{ render_expression(expr=value.rhs) }})
+        self.dae.bind({{ render_component_reference(comp=value.comp) }}, {{ render_expression(expr=value.rhs) }})
         {%- else -%}
         {{ warn("unknown statement: " + key) }}
         {%- endif %}
