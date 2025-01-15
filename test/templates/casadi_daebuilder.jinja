@@ -202,9 +202,9 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 {%- macro render_statement(stmt) -%}
     {%- for key, value in stmt | items -%}
         {%- if key == "Assignment" -%}
-            {{ render_component_reference(comp=value.comp) }} = {{ render_expression(expr=value.rhs) }}
+        self.dae.bind('{{ render_component_reference(comp=value.comp) }}', {{ render_expression(expr=value.rhs) }})
         {%- else -%}
-            {{ warn("unknown statement: " + key) }}
+        {{ warn("unknown statement: " + key) }}
         {%- endif %}
     {%- endfor -%}
 {%- endmacro -%}
