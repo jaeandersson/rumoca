@@ -8,15 +8,15 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         super().__init__('{{ class.name }}')
 
         # Constants
-        {%- for const in class.c %}
-            {%- set comp = class.components[const] %}
-        {{ comp.name }} = {{ comp.start_value.data[0] }}
-        {%- endfor %}
+        {{ render_variables(class, class.c, "c") | indent(4) }}
+
+        # Constant values
+        {{ render_bindings(class, class.c) | indent(4) }}
 
         # Parameters
         {{ render_variables(class, class.p, "p") | indent(4) }}
 
-        # Parameter bindings
+        # Parameter values
         {{ render_bindings(class, class.p) | indent(4) }}
 
         # Discrete states
