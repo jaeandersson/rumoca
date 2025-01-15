@@ -64,14 +64,14 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {%- if array.dim == [1] -%}
             {{ array.data[0] }}
         {%- else -%}
-            {{ "{" }}{%- for i in range(array.dim[0]) -%}
+            {{ "[" }}{%- for i in range(array.dim[0]) -%}
                 {{ array.data[i]}}{% if not loop.last %},{% endif -%}
-            {%- endfor -%}{{ "}" }}
+            {%- endfor -%}{{ "]" }}
         {%- endif -%}
     {%- else -%}
-        {{ "{" }}{%- for i in range(array.dim[0]) -%}
+        {{ "[" }}{%- for i in range(array.dim[0]) -%}
             {{ render_ndarray(array[i]) }}{% if not loop.last %},{% endif -%}
-        {%- endfor -%}{{ "}" }}
+        {%- endfor -%}{{ "]" }}
     {%- endif -%}
 {%- endmacro -%}
 
