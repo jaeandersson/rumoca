@@ -15,10 +15,9 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 
         # Parameters
         {{ render_variables(class, class.p, "p") | indent(4) }}
-        {{ render_vector("self.p", class, class.p) | indent(12) }}
 
-        # declare parameter start values
-        {{ render_vector_start_dict("self.p0", class, class.p) | indent(4) }}
+        # Parameter bindings
+        {{ render_bindings(class, class.p) | indent(4) }}
 
         # Discrete states
         {{ render_variables(class, class.z, "x") | indent(4) }}
@@ -112,6 +111,13 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {%- for var in var_list %}{{"\n"}}
         {{- var }}{% if not loop.last %},{% endif %}
     {%- endfor -%})
+{%- endmacro -%}
+
+{%- macro render_bindings(class, var_list) -%}
+    {%- for var in var_list -%}
+    {%- set comp = class.components[var] -%}
+    self.dae.assign('{{ var }}', {{ render_ndarray(comp.start_value) | indent(4) }})
+    {% endfor -%}
 {%- endmacro -%}
 
 {%- macro render_vector_start_dict(target, class, var_list) -%}
