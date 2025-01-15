@@ -29,8 +29,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {{ render_variables(class, class.u, "u") | indent(4) }}
 
         # Outputs
-        {{ render_zero_symbols(class, class.y) | indent(4) }}
-        {{ render_vector("self.y", class, class.y) | indent(12) }}
+        {{ render_variables(class, class.y, "y") | indent(4) }}
 
         # Internal variables
         {{ render_variables(class, class.w, "w") | indent(4) }}
