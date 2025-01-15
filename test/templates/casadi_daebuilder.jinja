@@ -21,28 +21,25 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 
         # Discrete states
         {{ render_variables(class, class.z, "x") | indent(4) }}
-        {{ render_vector("self.z", class, class.z) | indent(12) }}
 
-        # declare discrete states start values
-        {{ render_vector_start_dict("self.z0", class, class.z) | indent(4) }}
+        # Discrete states start values
+        {{ render_start(class, class.z) | indent(4) }}
 
-        # declare inputs
+        # Inputs
         {{ render_variables(class, class.u, "u") | indent(4) }}
-        {{ render_vector("self.u", class, class.u) | indent(12) }}
 
-        # declare outputs
+        # Outputs
         {{ render_zero_symbols(class, class.y) | indent(4) }}
         {{ render_vector("self.y", class, class.y) | indent(12) }}
 
-        # declare internal variables
+        # Internal variables
         {{ render_variables(class, class.w, "w") | indent(4) }}
 
-        # declare continuous states
+        # Differential states
         {{ render_variables(class, class.x, "x") | indent(4) }}
-        {{ render_vector("self.x", class, class.x) | indent(12) }}
 
-        # declare continuous states start values
-        {{ render_vector_start_dict("self.x0", class, class.x) | indent(4) }}
+        # Differential states start values
+        {{ render_start(class, class.x) | indent(4) }}
 
         # algorithmic
         {{ render_statement_list(class.algorithm) | indent(4) }}
@@ -120,14 +117,11 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {% endfor -%}
 {%- endmacro -%}
 
-{%- macro render_vector_start_dict(target, class, var_list) -%}
-    {{ target }} = {
-    {%- for var in var_list %}
-        {%- set comp = class.components[var]%}
-        '{{ var }}': {{ render_ndarray(comp.start_value) | indent(8) -}}
-        {% if not loop.last %},{% endif %}
-    {%- endfor %}
-    }
+{%- macro render_start(class, var_list) -%}
+    {%- for var in var_list -%}
+    {%- set comp = class.components[var] -%}
+    self.dae.set_start('{{ var }}', {{ render_ndarray(comp.start_value) | indent(4) }})
+    {% endfor -%}
 {%- endmacro -%}
 
 {%- macro render_ordermap_expression(target, map, var_list) -%}
