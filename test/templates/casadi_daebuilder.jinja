@@ -50,11 +50,8 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {{ render_ode(class.ode, class.x) | indent(4) }}
 
 {% if class.class_type == "Function" %}
-        # build function
-        #self.F = ca.Function("{{ class.name }}", [self.u], [self.y], ['u'], ['y'])
-
     def __call__(self, *args):
-        return self.F(ca.vertcat(*args))
+        raise NotImplementedError
 
 # callable function singleton
 {{ class.name }} = __{{ class .name }}()
