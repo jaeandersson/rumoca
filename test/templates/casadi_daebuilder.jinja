@@ -51,7 +51,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
 
 {% if class.class_type == "Function" %}
         # build function
-        self.F = ca.Function("{{ class.name }}", [self.u], [self.y], ['u'], ['y'])
+        #self.F = ca.Function("{{ class.name }}", [self.u], [self.y], ['u'], ['y'])
 
     def __call__(self, *args):
         return self.F(ca.vertcat(*args))
@@ -149,7 +149,7 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
         {%- elif key == "UnsignedInteger" -%}
             {{ value }}
         {%- elif key == "Ref" -%}
-            {{ render_component_reference(comp=value.comp) }}
+            self.dae('{{ render_component_reference(comp=value.comp) }}')
         {%- elif key == "Add" -%}
             {{ render_binary(op=" + ", expr=value) -}}
         {%- elif key == "Sub" -%}
