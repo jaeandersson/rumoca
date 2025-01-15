@@ -90,25 +90,6 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {% endfor -%}
 {%- endmacro -%}
 
-{%- macro render_zero_symbols(class, var_list) -%}
-    {%- for var in var_list -%}
-        {%- set comp = class.components[var] -%}
-        {{- var }} = ca.SX.zeros(
-        {%- if comp.array_subscripts | length > 0 -%}
-            {%- for sub in comp.array_subscripts -%}
-            {{ render_subscript(sub) }}{% if not loop.last %},{% endif -%}
-            {%- endfor -%}
-        {%- endif -%})
-    {% endfor -%}
-{%- endmacro -%}
-
-{%- macro render_vector(target, class, var_list) -%}
-    {{ target }} = ca.vertcat(
-    {%- for var in var_list %}{{"\n"}}
-        {{- var }}{% if not loop.last %},{% endif %}
-    {%- endfor -%})
-{%- endmacro -%}
-
 {%- macro render_bindings(class, var_list) -%}
     {%- for var in var_list -%}
     {%- set comp = class.components[var] -%}
@@ -127,13 +108,6 @@ class {% if class.class_type == "Function" -%}__{% endif -%}{{ class.name }}(Bas
     {{ target }} = ca.vertcat(
     {% for var in var_list -%}
         {%- set expr = map[var] -%}
-        {{ render_expression(expr=expr) }}{% if not loop.last %},{% endif %}
-    {% endfor -%})
-{%- endmacro -%}
-
-{%- macro render_vector_expression(target, expr_list) -%}
-    {{ target }} = ca.vertcat(
-    {% for expr in expr_list -%}
         {{ render_expression(expr=expr) }}{% if not loop.last %},{% endif %}
     {% endfor -%})
 {%- endmacro -%}
